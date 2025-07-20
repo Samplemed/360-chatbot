@@ -1,4 +1,4 @@
-# Conversor CSV para TXT – Chatbot S360
+# Conversor JSON para TXT – Chatbot S360
 
 Este projeto tem como objetivo converter arquivos CSV contendo artigos em formato JSON para arquivos `.txt`, prontos para uso com modelos de linguagem (chatbots, treinamentos, análises, etc).
 
