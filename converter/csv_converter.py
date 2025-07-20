@@ -1,40 +1,33 @@
-import json
 import os
+import json
 
-def convert_csv_to_txt(csv_path, output_dir):
+def convert_csv_to_single_txt(input_csv_path: str, output_dir: str) -> None:
     os.makedirs(output_dir, exist_ok=True)
-    with open(csv_path, encoding="utf-8") as f:
-        for i, line in enumerate(f, 1):
-            line = line.strip()
-            if not line:
-                continue
+    output_path = os.path.join(output_dir, "output.txt")
 
-            # Remove as aspas duplas extremas se existirem
-            if line.startswith('"') and line.endswith('"'):
-                line = line[1:-1]
-
-            # Substitui aspas duplas internas por aspas simples para formar JSON válido
-            line = line.replace('""', '"')
-
+    with open(input_csv_path, "r", encoding="utf-8") as infile, open(output_path, "w", encoding="utf-8") as outfile:
+        for line in infile:
             try:
                 data = json.loads(line)
+                nome = data.get("article_name_pt_br", "Sem título")
+                texto = data.get("texto", "")
+                outfile.write(f"{nome}\n{texto}\n\n")
             except json.JSONDecodeError:
-                print(f"[ERRO] JSON inválido na linha {i}")
-                continue
+                print("[AVISO] Linha ignorada (não é JSON)")
 
-            # Monta texto de saída
-            lines_out = []
-            for key, value in data.items():
-                if isinstance(value, list):
-                    for v in value:
-                        lines_out.append(f"{key}: {json.dumps(v, ensure_ascii=False)}")
-                else:
-                    lines_out.append(f"{key}: {value}")
+def convert_csv_to_multiple_txt(input_csv_path: str, output_dir: str) -> None:
+    os.makedirs(output_dir, exist_ok=True)
 
-            content = "\n".join(lines_out)
+    with open(input_csv_path, "r", encoding="utf-8") as infile:
+        for idx, line in enumerate(infile, 1):
+            try:
+                data = json.loads(line)
+                nome = data.get("article_name_pt_br", f"artigo_{idx}").replace(" ", "_")
+                texto = data.get("texto", "")
+                file_path = os.path.join(output_dir, f"{nome}.txt")
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(f"{nome}\n{texto}")
+            except json.JSONDecodeError:
+                print("[AVISO] Linha ignorada (não é JSON)")
 
-            output_file = os.path.join(output_dir, f"document_{i}.txt")
-            with open(output_file, "w", encoding="utf-8") as out_f:
-                out_f.write(content + "\n")
-
-            print(f"[OK] Linha {i} processada e salva em {output_file}")
+__all__ = ["convert_csv_to_single_txt", "convert_csv_to_multiple_txt"]

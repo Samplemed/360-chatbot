@@ -1,38 +1,57 @@
-import unittest
-from main import convert_csv_to_txt_compiled, convert_csv_to_multiple_txt
 import os
 import shutil
+import unittest
+
+from converter.csv_converter import convert_csv_to_single_txt, convert_csv_to_multiple_txt
 
 class TestCSVConverter(unittest.TestCase):
     def setUp(self):
-        self.test_csv = "tests/test_data.csv"
-        self.output_dir = "tests/output"
+        self.test_dir = "tests"
+        self.test_csv = os.path.join(self.test_dir, "test_input.csv")
+        self.output_dir = os.path.join(self.test_dir, "output")
+
+        os.makedirs(self.test_dir, exist_ok=True)
+
+        if os.path.exists(self.output_dir):
+            shutil.rmtree(self.output_dir)
         os.makedirs(self.output_dir, exist_ok=True)
 
-        # Cria um CSV de teste com 2 linhas JSON válidas
         with open(self.test_csv, "w", encoding="utf-8") as f:
-            f.write('{"article_id": "001", "article_name_pt_br": "Teste 1"}\n')
-            f.write('{"article_id": "002", "article_name_pt_br": "Teste 2"}\n')
+            f.write('{"article_name_pt_br": "Artigo 1", "texto": "Texto do primeiro artigo"}\n')
+            f.write('{"article_name_pt_br": "Artigo 2", "texto": "Texto do segundo artigo"}\n')
 
     def tearDown(self):
-        shutil.rmtree(self.output_dir)
-        os.remove(self.test_csv)
+        if os.path.exists(self.output_dir):
+            shutil.rmtree(self.output_dir)
+        if os.path.exists(self.test_csv):
+            os.remove(self.test_csv)
 
-    def test_compiled_output(self):
-        convert_csv_to_txt_compiled(self.test_csv, self.output_dir)
-        output_file = os.path.join(self.output_dir, "artigos_compilados.txt")
-        self.assertTrue(os.path.exists(output_file))
-        with open(output_file, encoding="utf-8") as f:
+    def test_single_txt_output(self):
+        convert_csv_to_single_txt(self.test_csv, self.output_dir)
+        output_path = os.path.join(self.output_dir, "output.txt")
+        self.assertTrue(os.path.exists(output_path), "Arquivo compilado não foi criado.")
+
+        with open(output_path, "r", encoding="utf-8") as f:
             content = f.read()
-            self.assertIn("Teste 1", content)
-            self.assertIn("Teste 2", content)
+            self.assertIn("Artigo 1", content)
+            self.assertIn("Texto do segundo artigo", content)
 
     def test_multiple_output(self):
         convert_csv_to_multiple_txt(self.test_csv, self.output_dir)
         files = os.listdir(self.output_dir)
-        self.assertEqual(len(files), 2)
-        self.assertTrue(any("001" in name for name in files))
-        self.assertTrue(any("002" in name for name in files))
+        print("Arquivos gerados:", files)
+        self.assertEqual(len(files), 2, "Número incorreto de arquivos individuais gerados.")
+
+        contents = []
+        for file in files:
+            path = os.path.join(self.output_dir, file)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+                print(f"Conteúdo de {file}:\n{content}\n---")
+                contents.append(content)
+
+        self.assertTrue(any("Artigo_1" in c for c in contents), "Conteúdo 'Artigo_1' não encontrado em nenhum arquivo")
+        self.assertTrue(any("Artigo_2" in c for c in contents), "Conteúdo 'Artigo_2' não encontrado em nenhum arquivo")
 
 if __name__ == '__main__':
     unittest.main()
